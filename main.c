@@ -35,23 +35,28 @@ int main(int argc, char* args[]){
     int count = 0;
     int mousexc = 0;
     int mouseyc = 0;
-    bool mousebuttondown = false;
+    bool leftmousebuttondown = false;
+    bool rightmousebuttondown = false;
     while (!app->quit) {
         while (SDL_PollEvent(&(app->E))) {
             if (app->E.type == SDL_QUIT) {
                 app->quit = true;
             }
             if(app->E.type == SDL_MOUSEBUTTONDOWN){
-                mousebuttondown = true;
-                SDL_Log("Down");
+                if(app->E.button.button == SDL_BUTTON_LEFT){
+                    leftmousebuttondown = true;
+                }
+                if(app->E.button.button == SDL_BUTTON_RIGHT){
+                    rightmousebuttondown = true;
+                }
             }
             if(app->E.type == SDL_MOUSEBUTTONUP){
-                mousebuttondown = false;
-                SDL_Log("Up");
+                leftmousebuttondown = false;
+                rightmousebuttondown = false;
             }
         }        
         
-        if(mousebuttondown && count % 2 == 0){
+        if(leftmousebuttondown && count % 1 == 0){
             SDL_GetMouseState(&mousex, &mousey);
 
                 mouseyc = mousey/10;
@@ -60,8 +65,17 @@ int main(int argc, char* args[]){
                 grid[mouseyc-1][mousexc] = 1;
                 grid[mouseyc][mousexc+1] = 1;
                 grid[mouseyc][mousexc-1] = 1;
-            
+        }
+        if(rightmousebuttondown && count % 3 == 0){
+            SDL_GetMouseState(&mousex, &mousey);
 
+                mouseyc = mousey/10;
+                mousexc = mousex/10;
+                grid[mouseyc][mousexc] = 0;
+                grid[mouseyc+1][mousexc] = 0;
+                grid[mouseyc-1][mousexc] = 0;
+                grid[mouseyc][mousexc+1] = 0;
+                grid[mouseyc][mousexc-1] = 0;
         }
         count++;
         step_world(grid, next);
@@ -94,13 +108,14 @@ void draw_points(App* app, int grid[100][100]) {
                 SDL_SetRenderDrawColor(app->renderer, 200, 200, 0, 0);
                 SDL_RenderFillRect(app->renderer, &r);
                 SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 0);
-
-            }else{
+            } else {
                 SDL_SetRenderDrawColor(app->renderer, 0, 0, 100, 0);
-
+                r.x = x * 10;
+                r.y = y * 10;
+                r.w = 10;
+                r.h = 10;
+                SDL_RenderFillRect(app->renderer, &r);
             }
-        
-            
         }
     }
 }
@@ -116,15 +131,12 @@ void step_world(int grid[100][100], int next[100][100]) {
 for (int y = 99; y > 0; y--) {
     for (int x = 0; x < 100; x++) {
         if (grid[y][x] == 1) {
-            // Check if there is space below
             if (y < 99 && grid[y + 1][x] == 0) {
                 next[y + 1][x] = 1;
                 next[y][x] = 0;
             } else if (y < 99 && x > 0 && grid[y + 1][x - 1] == 0) {
-                // Check if there is space below and to the left
                 next[y + 1][x - 1] = 1;
             } else if (y < 99 && x < 99 && grid[y + 1][x + 1] == 0) {
-                // Check if there is space below and to the right
                 next[y + 1][x + 1] = 1;
                 
             } else {
@@ -133,8 +145,6 @@ for (int y = 99; y > 0; y--) {
         }
     }
 }
-
-    // Copy the result back to the original grid
     for (int y = 0; y < 100; y++) {
         for (int x = 0; x < 100; x++) {
             grid[y][x] = next[y][x];
